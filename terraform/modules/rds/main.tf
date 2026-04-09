@@ -1,18 +1,19 @@
-resource "aws_db_instance" "postgres" {
-  identifier = "bjj-db"
+resource "aws_db_subnet_group" "this" {
+  name       = "${var.name}-subnet-group"
+  subnet_ids = var.subnet_ids
+}
 
-  engine         = "postgres"
+resource "aws_db_instance" "this" {
+  identifier = var.name
+  engine     = "postgres"
   instance_class = "db.t3.micro"
   allocated_storage = 20
-
-  db_name  = "bjj"
-
   username = var.db_user
   password = var.db_password
-
+  db_name  = var.db_name
   publicly_accessible = false
   skip_final_snapshot = true
-
   vpc_security_group_ids = [var.db_sg]
-  db_subnet_group_name   = var.db_subnet_group
+  db_subnet_group_name   = aws_db_subnet_group.this.name
+  tags = var.tags
 }
