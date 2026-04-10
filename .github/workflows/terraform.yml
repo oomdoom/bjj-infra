@@ -48,7 +48,7 @@ jobs:
 
       # Apply only on pushes to main (not PRs, not develop)
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
           terraform apply -auto-approve \
             -var="db_user=${{ secrets.DB_USER }}" \
