@@ -44,9 +44,7 @@ jobs:
         run: |
           terraform plan \
             -var="db_user=${{ secrets.DB_USER }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="eks_cluster_role_arn=${{ secrets.EKS_CLUSTER_ROLE_ARN }}" \
-            -var="eks_node_role_arn=${{ secrets.EKS_NODE_ROLE_ARN }}"
+            -var="db_password=${{ secrets.DB_PASSWORD }}"
 
       # Apply only on pushes to main (not PRs, not develop)
       - name: Terraform Apply
@@ -54,6 +52,4 @@ jobs:
         run: |
           terraform apply -auto-approve \
             -var="db_user=${{ secrets.DB_USER }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="eks_cluster_role_arn=${{ secrets.EKS_CLUSTER_ROLE_ARN }}" \
-            -var="eks_node_role_arn=${{ secrets.EKS_NODE_ROLE_ARN }}"
+            -var="db_password=${{ secrets.DB_PASSWORD }}"

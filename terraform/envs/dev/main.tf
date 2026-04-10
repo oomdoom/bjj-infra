@@ -3,6 +3,22 @@ provider "aws" {
 }
 
 # -------------------
+# IAM — runs first so EKS can reference the role ARNs it creates
+# -------------------
+module "iam" {
+  source = "../../modules/iam"
+
+  db_user     = var.db_user
+  db_password = var.db_password
+
+  eks_namespace            = "default"
+  eks_service_account_name = "bjj-api-sa"
+
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider     = module.eks.oidc_provider
+}
+
+# -------------------
 # VPC
 # -------------------
 module "vpc" {
@@ -26,8 +42,8 @@ module "eks" {
   source = "../../modules/eks"
 
   cluster_name     = "bjj-eks"
-  cluster_role_arn = var.eks_cluster_role_arn
-  node_role_arn    = var.eks_node_role_arn
+  cluster_role_arn = module.iam.eks_cluster_role_arn
+  node_role_arn    = module.iam.eks_node_role_arn
 
   subnet_ids = module.vpc.private_subnet_ids
   cluster_sg = module.vpc.vpc_id
@@ -36,11 +52,12 @@ module "eks" {
   max_size       = 2
   min_size       = 1
   instance_types = ["t3.medium"]
+
+  depends_on = [module.iam]
 }
 
 # -------------------
 # RDS Security Group
-# Scoped to only accept traffic from EKS nodes/cluster — not the internet.
 # -------------------
 resource "aws_security_group" "rds" {
   name        = "bjj-rds-sg"
@@ -56,10 +73,11 @@ resource "aws_security_group" "rds" {
   }
 
   egress {
+    description = "Allow outbound only within VPC"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["10.42.0.0/16"]
   }
 
   tags = {
@@ -80,20 +98,4 @@ module "rds" {
 
   subnet_ids = module.vpc.private_subnet_ids
   db_sg      = aws_security_group.rds.id
-}
-
-# -------------------
-# IAM (IRSA + Secrets)
-# -------------------
-module "iam" {
-  source = "../../modules/iam"
-
-  db_user     = var.db_user
-  db_password = var.db_password
-
-  eks_namespace            = "default"
-  eks_service_account_name = "bjj-api-sa"
-
-  oidc_provider_arn = module.eks.oidc_provider_arn
-  oidc_provider     = module.eks.oidc_provider
 }
