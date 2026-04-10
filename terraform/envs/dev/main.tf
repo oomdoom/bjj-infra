@@ -9,9 +9,9 @@ module "vpc" {
   source = "../../modules/vpc"
 
   name            = "bjj-vpc"
-  cidr            = "10.0.0.0/16"
-  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
-  private_subnets = ["10.0.101.0/24", "10.0.102.0/24"]
+  cidr            = "10.42.0.0/16"
+  public_subnets  = ["10.42.1.0/24", "10.42.2.0/24"]
+  private_subnets = ["10.42.101.0/24", "10.42.102.0/24"]
   azs             = ["us-east-1a", "us-east-1b"]
 
   tags = {
@@ -39,6 +39,35 @@ module "eks" {
 }
 
 # -------------------
+# RDS Security Group
+# Scoped to only accept traffic from EKS nodes/cluster — not the internet.
+# -------------------
+resource "aws_security_group" "rds" {
+  name        = "bjj-rds-sg"
+  description = "Allow Postgres access from EKS cluster only"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description     = "Postgres from EKS cluster"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [module.eks.cluster_security_group_id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Project = "bjj-api"
+  }
+}
+
+# -------------------
 # RDS
 # -------------------
 module "rds" {
@@ -53,26 +82,6 @@ module "rds" {
   db_sg      = aws_security_group.rds.id
 }
 
-resource "aws_security_group" "rds" {
-  name   = "bjj-rds-sg"
-  vpc_id = module.vpc.vpc_id
-
-  ingress {
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    # TEMP: allow all (fix later)
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 # -------------------
 # IAM (IRSA + Secrets)
 # -------------------
@@ -82,8 +91,8 @@ module "iam" {
   db_user     = var.db_user
   db_password = var.db_password
 
-  eks_namespace             = "default"
-  eks_service_account_name  = "bjj-api-sa"
+  eks_namespace            = "default"
+  eks_service_account_name = "bjj-api-sa"
 
   oidc_provider_arn = module.eks.oidc_provider_arn
   oidc_provider     = module.eks.oidc_provider
