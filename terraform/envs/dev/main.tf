@@ -98,4 +98,8 @@ module "rds" {
 
   subnet_ids = module.vpc.private_subnet_ids
   db_sg      = aws_security_group.rds.id
+
+  tags = {
+    Project = "bjj-api"
+  }
 }
