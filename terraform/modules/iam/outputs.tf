@@ -6,8 +6,8 @@ output "eks_node_role_arn" {
   value = aws_iam_role.eks_node.arn
 }
 
-output "irsa_role_arn" {
-  value = aws_iam_role.irsa_role.arn
+output "secrets_policy_arn" {
+  value = aws_iam_policy.secrets_access.arn
 }
 
 output "db_secret_arn" {

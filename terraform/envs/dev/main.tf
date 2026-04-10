@@ -3,19 +3,14 @@ provider "aws" {
 }
 
 # -------------------
-# IAM — runs first so EKS can reference the role ARNs it creates
+# IAM (Phase 1) — EKS roles only, no OIDC dependency
+# Must exist before EKS so the cluster and node roles are ready.
 # -------------------
 module "iam" {
   source = "../../modules/iam"
 
   db_user     = var.db_user
   db_password = var.db_password
-
-  eks_namespace            = "default"
-  eks_service_account_name = "bjj-api-sa"
-
-  oidc_provider_arn = module.eks.oidc_provider_arn
-  oidc_provider     = module.eks.oidc_provider
 }
 
 # -------------------
@@ -54,6 +49,37 @@ module "eks" {
   instance_types = ["t3.medium"]
 
   depends_on = [module.iam]
+}
+
+# -------------------
+# IRSA (Phase 2) — created after EKS so we have the OIDC provider ARN
+# Gives the app pod permission to read from Secrets Manager.
+# -------------------
+resource "aws_iam_role" "irsa" {
+  name = "bjj-irsa-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = module.eks.oidc_provider_arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${module.eks.oidc_provider}:sub" = "system:serviceaccount:default:bjj-api-sa"
+        }
+      }
+    }]
+  })
+
+  depends_on = [module.eks]
+}
+
+resource "aws_iam_role_policy_attachment" "irsa_secrets" {
+  role       = aws_iam_role.irsa.name
+  policy_arn = module.iam.secrets_policy_arn
 }
 
 # -------------------

@@ -84,6 +84,7 @@ resource "aws_secretsmanager_secret_version" "db" {
 
 # -----------------------------
 # 4. IAM Policy (Secrets Access)
+# Used by the IRSA role in dev/main.tf after EKS is created.
 # -----------------------------
 resource "aws_iam_policy" "secrets_access" {
   name = "bjj-secrets-policy"
@@ -96,32 +97,4 @@ resource "aws_iam_policy" "secrets_access" {
       Resource = aws_secretsmanager_secret.db.arn
     }]
   })
-}
-
-# -----------------------------
-# 5. IRSA Role (pod-level secrets access)
-# -----------------------------
-resource "aws_iam_role" "irsa_role" {
-  name = "bjj-irsa-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Federated = var.oidc_provider_arn
-      }
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Condition = {
-        StringEquals = {
-          "${var.oidc_provider}:sub" = "system:serviceaccount:${var.eks_namespace}:${var.eks_service_account_name}"
-        }
-      }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "irsa_secrets_attach" {
-  role       = aws_iam_role.irsa_role.name
-  policy_arn = aws_iam_policy.secrets_access.arn
 }
