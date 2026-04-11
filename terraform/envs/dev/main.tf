@@ -68,7 +68,7 @@ resource "aws_iam_role" "irsa" {
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
-          "${module.eks.oidc_provider}:sub" = "system:serviceaccount:default:bjj-api-sa"
+          "${module.eks.oidc_provider}:sub" = "system:serviceaccount:bjj-app:bjj-api-sa"
         }
       }
     }]
