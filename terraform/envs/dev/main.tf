@@ -31,8 +31,78 @@ module "vpc" {
 }
 
 # -------------------
+# EKS security group
+# -------------------
+
+resource "aws_security_group" "eks_cluster" {
+  name        = "bjj-eks-cluster-sg"
+  description = "EKS cluster control plane security group"
+  vpc_id      = module.vpc.vpc_id
+
+  # Inbound — HTTPS from internet (kubectl, API server)
+  ingress {
+    description = "HTTPS from internet"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Inbound — HTTP from internet
+  ingress {
+    description = "HTTP from internet"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Inbound — all traffic within VPC
+  ingress {
+    description = "All traffic within VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.42.0.0/16"]
+  }
+
+  # Outbound — HTTPS to internet (ECR pulls, Secrets Manager, AWS APIs)
+  egress {
+    description = "HTTPS to internet"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Outbound — HTTP to internet
+  egress {
+    description = "HTTP to internet"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Outbound — all traffic within VPC (nodes, RDS, internal services)
+  egress {
+    description = "All traffic within VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.42.0.0/16"]
+  }
+
+  tags = {
+    Project = "bjj-api"
+    Name    = "bjj-eks-cluster-sg"
+  }
+}
+
+# -------------------
 # EKS
 # -------------------
+
 module "eks" {
   source = "../../modules/eks"
 
