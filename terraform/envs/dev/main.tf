@@ -2,6 +2,8 @@ provider "aws" {
   region = var.region
 }
 
+data "aws_caller_identity" "current" {}
+
 # -------------------
 # IAM (Phase 1) — EKS roles only, no OIDC dependency
 # Must exist before EKS so the cluster and node roles are ready.
@@ -133,7 +135,7 @@ resource "aws_iam_role" "irsa" {
     Statement = [{
       Effect = "Allow"
       Principal = {
-        Federated = module.eks.oidc_provider_arn
+        Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${module.eks.oidc_provider}"
       }
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
