@@ -10,11 +10,3 @@ terraform {
 provider "aws" {
   region = var.region
 }
-
-data "aws_eks_cluster" "this" {
-  name = "bjj-eks"
-}
-
-data "aws_eks_cluster_auth" "this" {
-  name = "bjj-eks"
-}
