@@ -19,9 +19,9 @@ resource "aws_subnet" "public" {
   availability_zone       = var.azs[count.index]
 
   tags = merge(var.tags, {
-    Name                                  = "${var.name}-public-${count.index}"
-    "kubernetes.io/role/elb"              = "1"
-    "kubernetes.io/cluster/${var.name}"   = "shared"
+    Name                                        = "${var.name}-public-${count.index}"
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   })
 }
 
@@ -32,9 +32,9 @@ resource "aws_subnet" "private" {
   availability_zone = var.azs[count.index]
 
   tags = merge(var.tags, {
-    Name                                  = "${var.name}-private-${count.index}"
-    "kubernetes.io/role/internal-elb"     = "1"
-    "kubernetes.io/cluster/${var.name}"   = "shared"
+    Name                                        = "${var.name}-private-${count.index}"
+    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   })
 }
 

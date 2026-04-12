@@ -10,6 +10,15 @@ resource "aws_eks_cluster" "this" {
   }
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [
+      compute_config,
+      kubernetes_network_config,
+      storage_config,
+      upgrade_policy
+    ]
+  }
 }
 
 resource "aws_eks_node_group" "this" {

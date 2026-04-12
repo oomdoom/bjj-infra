@@ -22,6 +22,7 @@ module "vpc" {
   source = "../../modules/vpc"
 
   name            = "bjj-vpc"
+  cluster_name    = "bjj-eks"
   cidr            = "10.42.0.0/16"
   public_subnets  = ["10.42.1.0/24", "10.42.2.0/24"]
   private_subnets = ["10.42.101.0/24", "10.42.102.0/24"]
@@ -117,6 +118,7 @@ module "eks" {
   max_size       = 2
   min_size       = 1
   instance_types = ["t3.medium"]
+  tags           = { Project = "bjj-api" }
 
   depends_on = [module.iam]
 }
@@ -150,38 +152,6 @@ resource "aws_iam_role" "irsa" {
 resource "aws_iam_role_policy_attachment" "irsa_secrets" {
   role       = aws_iam_role.irsa.name
   policy_arn = module.iam.secrets_policy_arn
-}
-
-resource "aws_iam_role_policy_attachment" "irsa_lb_controller" {
-  role       = aws_iam_role.irsa.name
-  policy_arn = "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"
-}
-
-# -------------------
-# AWS Load Balancer Controller
-# -------------------
-resource "helm_release" "aws_load_balancer_controller" {
-  name       = "aws-load-balancer-controller"
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-load-balancer-controller"
-  namespace  = "kube-system"
-
-  set {
-    name  = "clusterName"
-    value = module.eks.cluster_name
-  }
-
-  set {
-    name  = "serviceAccount.create"
-    value = "true"
-  }
-
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.irsa.arn
-  }
-
-  depends_on = [module.eks, aws_iam_role.irsa]
 }
 
 # -------------------
