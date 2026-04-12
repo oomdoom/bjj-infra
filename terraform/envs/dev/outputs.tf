@@ -1,15 +1,19 @@
-output "vpc_id" {
-  value = module.vpc.vpc_id
+output "eks_cluster_role_arn" {
+  value = aws_iam_role.eks_cluster.arn
 }
 
-output "eks_cluster_name" {
-  value = module.eks.cluster_name
+output "eks_node_role_arn" {
+  value = aws_iam_role.eks_node.arn
 }
 
-output "eks_endpoint" {
-  value = module.eks.cluster_endpoint
+output "lb_controller_role_arn" {
+  value = aws_iam_role.lb_controller.arn
 }
 
-output "rds_endpoint" {
-  value = module.rds.db_endpoint
+output "secrets_policy_arn" {
+  value = aws_iam_policy.secrets_access.arn
+}
+
+output "db_secret_arn" {
+  value = aws_secretsmanager_secret.db.arn
 }

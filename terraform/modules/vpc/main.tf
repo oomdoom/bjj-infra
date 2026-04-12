@@ -19,9 +19,9 @@ resource "aws_subnet" "public" {
   availability_zone       = var.azs[count.index]
 
   tags = merge(var.tags, {
-    Name                                  = "${var.name}-public-${count.index}"
-    "kubernetes.io/role/elb"              = "1"
-    "kubernetes.io/cluster/${var.name}"   = "shared"
+    Name                                        = "${var.name}-public-${count.index}"
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   })
 }
 
@@ -32,9 +32,9 @@ resource "aws_subnet" "private" {
   availability_zone = var.azs[count.index]
 
   tags = merge(var.tags, {
-    Name                                  = "${var.name}-private-${count.index}"
-    "kubernetes.io/role/internal-elb"     = "1"
-    "kubernetes.io/cluster/${var.name}"   = "shared"
+    Name                                        = "${var.name}-private-${count.index}"
+    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   })
 }
 
@@ -52,7 +52,6 @@ resource "aws_internet_gateway" "this" {
 resource "aws_eip" "nat" {
   domain = "vpc"
   tags   = merge(var.tags, { Name = "${var.name}-nat-eip" })
-
   depends_on = [aws_internet_gateway.this]
 }
 
@@ -60,15 +59,12 @@ resource "aws_nat_gateway" "this" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
   tags          = merge(var.tags, { Name = "${var.name}-nat" })
-
-  depends_on = [aws_internet_gateway.this]
+  depends_on    = [aws_internet_gateway.this]
 }
 
 # -------------------
 # Route Tables
 # -------------------
-
-# Public: route all traffic through the IGW
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
   tags   = merge(var.tags, { Name = "${var.name}-public-rt" })
@@ -85,7 +81,6 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Private: route all traffic through the single NAT Gateway
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
   tags   = merge(var.tags, { Name = "${var.name}-private-rt" })

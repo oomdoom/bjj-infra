@@ -2,6 +2,8 @@ provider "aws" {
   region = var.region
 }
 
+data "aws_caller_identity" "current" {}
+
 # -------------------
 # IAM (Phase 1) — EKS roles only, no OIDC dependency
 # Must exist before EKS so the cluster and node roles are ready.
@@ -20,6 +22,7 @@ module "vpc" {
   source = "../../modules/vpc"
 
   name            = "bjj-vpc"
+  cluster_name    = "bjj-eks"
   cidr            = "10.42.0.0/16"
   public_subnets  = ["10.42.1.0/24", "10.42.2.0/24"]
   private_subnets = ["10.42.101.0/24", "10.42.102.0/24"]
@@ -33,7 +36,6 @@ module "vpc" {
 # -------------------
 # EKS security group
 # -------------------
-
 resource "aws_security_group" "eks_cluster" {
   name        = "bjj-eks-cluster-sg"
   description = "EKS cluster control plane security group"
@@ -102,7 +104,6 @@ resource "aws_security_group" "eks_cluster" {
 # -------------------
 # EKS
 # -------------------
-
 module "eks" {
   source = "../../modules/eks"
 
@@ -111,12 +112,13 @@ module "eks" {
   node_role_arn    = module.iam.eks_node_role_arn
 
   subnet_ids = module.vpc.private_subnet_ids
-  cluster_sg = module.vpc.vpc_id
+  cluster_sg = aws_security_group.eks_cluster.id
 
   desired_size   = 1
   max_size       = 2
   min_size       = 1
   instance_types = ["t3.medium"]
+  tags           = { Project = "bjj-api" }
 
   depends_on = [module.iam]
 }
@@ -133,7 +135,7 @@ resource "aws_iam_role" "irsa" {
     Statement = [{
       Effect = "Allow"
       Principal = {
-        Federated = module.eks.oidc_provider_arn
+        Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${module.eks.oidc_provider}"
       }
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
