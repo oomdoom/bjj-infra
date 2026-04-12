@@ -1,19 +1,19 @@
 output "eks_cluster_role_arn" {
-  value = aws_iam_role.eks_cluster.arn
+  value = module.iam.eks_cluster_role_arn
 }
 
 output "eks_node_role_arn" {
-  value = aws_iam_role.eks_node.arn
+  value = module.iam.eks_node_role_arn
 }
 
 output "lb_controller_role_arn" {
-  value = aws_iam_role.lb_controller.arn
+  value = module.iam.lb_controller_role_arn
 }
 
 output "secrets_policy_arn" {
-  value = aws_iam_policy.secrets_access.arn
+  value = module.iam.secrets_policy_arn
 }
 
 output "db_secret_arn" {
-  value = aws_secretsmanager_secret.db.arn
+  value = module.iam.db_secret_arn
 }
