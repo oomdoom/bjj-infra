@@ -111,7 +111,7 @@ module "eks" {
   node_role_arn    = module.iam.eks_node_role_arn
 
   subnet_ids = module.vpc.private_subnet_ids
-  cluster_sg = module.vpc.vpc_id
+  cluster_sg = aws_security_group.eks_cluster.id  # ← correct
 
   desired_size   = 1
   max_size       = 2
