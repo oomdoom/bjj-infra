@@ -35,7 +35,6 @@ module "vpc" {
 # -------------------
 # EKS security group
 # -------------------
-
 resource "aws_security_group" "eks_cluster" {
   name        = "bjj-eks-cluster-sg"
   description = "EKS cluster control plane security group"
@@ -104,7 +103,6 @@ resource "aws_security_group" "eks_cluster" {
 # -------------------
 # EKS
 # -------------------
-
 module "eks" {
   source = "../../modules/eks"
 
@@ -113,7 +111,7 @@ module "eks" {
   node_role_arn    = module.iam.eks_node_role_arn
 
   subnet_ids = module.vpc.private_subnet_ids
-  cluster_sg = aws_security_group.eks_cluster.id  # ← correct
+  cluster_sg = aws_security_group.eks_cluster.id
 
   desired_size   = 1
   max_size       = 2
@@ -152,6 +150,38 @@ resource "aws_iam_role" "irsa" {
 resource "aws_iam_role_policy_attachment" "irsa_secrets" {
   role       = aws_iam_role.irsa.name
   policy_arn = module.iam.secrets_policy_arn
+}
+
+resource "aws_iam_role_policy_attachment" "irsa_lb_controller" {
+  role       = aws_iam_role.irsa.name
+  policy_arn = "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"
+}
+
+# -------------------
+# AWS Load Balancer Controller
+# -------------------
+resource "helm_release" "aws_load_balancer_controller" {
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+
+  set {
+    name  = "clusterName"
+    value = module.eks.cluster_name
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.irsa.arn
+  }
+
+  depends_on = [module.eks, aws_iam_role.irsa]
 }
 
 # -------------------
