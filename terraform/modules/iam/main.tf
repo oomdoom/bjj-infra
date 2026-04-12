@@ -66,7 +66,7 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_read_policy" {
 # 3. Secrets Manager
 # -----------------------------
 resource "aws_secretsmanager_secret" "db" {
-  name = "bjj-db-secret"
+  name = "bjj-db-secret-v2"
 
   tags = {
     Project = "bjj-api"
