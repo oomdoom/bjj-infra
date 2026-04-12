@@ -3,6 +3,7 @@
 # -----------------------------
 resource "aws_iam_role" "eks_cluster" {
   name = "bjj-eks-cluster-role"
+  force_detach_policies = true
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -30,6 +31,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 # -----------------------------
 resource "aws_iam_role" "eks_node" {
   name = "bjj-eks-node-role"
+  force_detach_policies = true
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -66,7 +68,8 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_read_policy" {
 # 3. Secrets Manager
 # -----------------------------
 resource "aws_secretsmanager_secret" "db" {
-  name = "bjj-db-secret-v2"
+  name                    = "bjj-db-secret-v2"
+  recovery_window_in_days = 0
 
   tags = {
     Project = "bjj-api"
