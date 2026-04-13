@@ -60,6 +60,11 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_read_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+resource "aws_iam_role_policy_attachment" "eks_cloudwatch_policy" {
+  role       = aws_iam_role.eks_node.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
 # -----------------------------
 # 3. LB Controller Role
 # -----------------------------
