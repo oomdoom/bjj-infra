@@ -9,6 +9,9 @@ resource "aws_eks_cluster" "this" {
     security_group_ids      = [var.cluster_sg]
   }
 
+  # Enable control plane logging to CloudWatch
+  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
   tags = var.tags
 
   lifecycle {
@@ -37,9 +40,25 @@ resource "aws_eks_node_group" "this" {
   tags           = var.tags
 }
 
-# OIDC Provider — required for IRSA to work
+# OIDC Provider — required for IRSA
 resource "aws_iam_openid_connect_provider" "this" {
   url             = aws_eks_cluster.this.identity[0].oidc[0].issuer
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da2b0ab7280"]
+}
+
+# CloudWatch Container Insights — pod/node metrics and logs
+resource "aws_eks_addon" "cloudwatch" {
+  cluster_name = aws_eks_cluster.this.name
+  addon_name   = "amazon-cloudwatch-observability"
+
+  tags = var.tags
+}
+
+# CloudWatch log group for the cluster
+resource "aws_cloudwatch_log_group" "eks" {
+  name              = "/aws/eks/${var.cluster_name}/cluster"
+  retention_in_days = 7
+
+  tags = var.tags
 }

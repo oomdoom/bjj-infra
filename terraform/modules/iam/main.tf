@@ -82,6 +82,10 @@ resource "aws_iam_role" "lb_controller" {
       }
     }]
   })
+
+  lifecycle {
+    ignore_changes = [assume_role_policy]
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "lb_controller_elb" {
